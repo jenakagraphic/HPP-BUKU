@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kalkulator Harga Buku</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#EEF1EC;--surface:#FBFCFA;--ink:#1C2A26;--muted:#5E6E68;--line:#CBD4CE;--accent:#1F5C4D;--accent-ink:#fff;--warn:#9B2C2C}
+@media (prefers-color-scheme:dark){:root{--bg:#141B18;--surface:#1C2622;--ink:#E7EEEA;--muted:#93A39C;--line:#2F3D37;--accent:#6CC4A8;--accent-ink:#0F1A16;--warn:#F08A8A}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Instrument Sans",system-ui,sans-serif}
+.wrap{max-width:960px;margin:0 auto;padding:32px 20px 64px}
+h1{font:600 clamp(28px,5vw,40px)/1.1 Fraunces,Georgia,serif;margin:0 0 4px}
+.sub{color:var(--muted);margin:0 0 28px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+@media(max-width:760px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:22px}
+label{display:block;font-weight:500;margin:14px 0 4px;font-size:14px}
+label:first-of-type{margin-top:0}
+input{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:inherit}
+input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.rp{position:relative}.rp span{position:absolute;left:12px;top:10px;color:var(--muted)}.rp input{padding-left:38px}
+.result{font:600 clamp(38px,8vw,56px)/1 Fraunces,Georgia,serif;color:var(--accent);margin:6px 0 2px}
+.rows{margin:18px 0 0;padding:0;list-style:none;border-top:1px solid var(--line)}
+.rows li{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line);font-size:15px}
+.rows li.t{font-weight:600}
+.muted{color:var(--muted);font-size:14px}
+.btns{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap}
+button{font:inherit;font-weight:600;padding:10px 16px;border-radius:6px;border:1px solid var(--accent);cursor:pointer;background:var(--accent);color:var(--accent-ink)}
+button.ghost{background:transparent;color:var(--accent)}
+.saved{margin-top:28px}
+.saved h2{font:600 22px Fraunces,Georgia,serif;margin:0 0 10px}
+.item{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.item b{display:block}
+.item .a{display:flex;gap:6px}
+.item button{padding:6px 10px;font-size:14px}
+#status{min-height:20px;margin-top:10px;font-size:14px;color:var(--muted)}
+#status.err{color:var(--warn)}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <h1>Kalkulator Harga Buku</h1>
+  <p class="sub">Hitung harga pokok dan harga jual per buku dari biaya produksi dan jumlah cetak.</p>
+  <div class="grid">
+    <section class="panel" aria-label="Input biaya">
+      <label for="judul">Judul buku</label>
+      <input id="judul" placeholder="Contoh: Kumpulan Cerpen Senja">
+      <label for="cetak">Biaya percetakan</label>
+      <div class="rp"><span>Rp</span><input id="cetak" inputmode="numeric" data-money></div>
+      <label for="editor">Biaya editor</label>
+      <div class="rp"><span>Rp</span><input id="editor" inputmode="numeric" data-money></div>
+      <label for="layouter">Biaya layouter</label>
+      <div class="rp"><span>Rp</span><input id="layouter" inputmode="numeric" data-money></div>
+      <label for="cover">Biaya desain cover</label>
+      <div class="rp"><span>Rp</span><input id="cover" inputmode="numeric" data-money></div>
+      <label for="oplah">Jumlah cetak (eksemplar)</label>
+      <input id="oplah" inputmode="numeric" data-money>
+      <label for="margin">Margin keuntungan (%, opsional)</label>
+      <input id="margin" inputmode="decimal" placeholder="0">
+    </section>
+    <section class="panel" aria-live="polite">
+      <div class="muted">Harga pokok per buku</div>
+      <div class="result" id="hpp">Rp 0</div>
+      <div class="muted" id="jualWrap" hidden>Harga jual dengan margin <span id="mg"></span>%: <b id="jual"></b></div>
+      <ul class="rows">
+        <li><span>Percetakan</span><span id="r1">Rp 0</span></li>
+        <li><span>Editor</span><span id="r2">Rp 0</span></li>
+        <li><span>Layouter</span><span id="r3">Rp 0</span></li>
+        <li><span>Desain cover</span><span id="r4">Rp 0</span></li>
+        <li class="t"><span>Total biaya produksi</span><span id="total">Rp 0</span></li>
+      </ul>
+      <div class="btns">
+        <button id="save">Simpan perhitungan</button>
+        <button id="reset" class="ghost">Kosongkan</button>
+      </div>
+      <div id="status" role="status"></div>
+    </section>
+  </div>
+  <section class="saved">
+    <h2>Perhitungan tersimpan</h2>
+    <div id="list"><p class="muted">Memuat…</p></div>
+  </section>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const F=["cetak","editor","layouter","cover","oplah"];
+const rp=n=>"Rp "+Math.round(n).toLocaleString("id-ID");
+const val=id=>Number(String($(id).value).replace(/\./g,"").replace(",","."))||0;
+let currentId=null,items=[];
+
+function fmtInput(e){const d=e.target.value.replace(/\D/g,"");e.target.value=d?Number(d).toLocaleString("id-ID"):"";calc()}
+document.querySelectorAll("[data-money]").forEach(i=>i.addEventListener("input",fmtInput));
+$("margin").addEventListener("input",calc);
+
+function calc(){
+  const [c,e,l,v,q]=F.map(val),total=c+e+l+v,m=Number($("margin").value.replace(",","."))||0;
+  $("r1").textContent=rp(c);$("r2").textContent=rp(e);$("r3").textContent=rp(l);$("r4").textContent=rp(v);
+  $("total").textContent=rp(total);
+  const hpp=q>0?total/q:0;
+  $("hpp").textContent=rp(hpp);
+  $("jualWrap").hidden=!(m>0&&q>0);
+  $("mg").textContent=m;$("jual").textContent=rp(hpp*(1+m/100));
+}
+function setStatus(t,err){const s=$("status");s.textContent=t;s.className=err?"err":""}
+
+function fill(d){
+  currentId=d?d.id:null;
+  $("judul").value=d?d.judul:"";
+  F.forEach(k=>$(k).value=d&&d[k]?Number(d[k]).toLocaleString("id-ID"):"");
+  $("margin").value=d&&d.margin?d.margin:"";
+  calc();
+}
+async function api(opts,q=""){
+  const r=await fetch("/api/projects"+q,opts);
+  if(!r.ok)throw new Error("Gagal menghubungi server ("+r.status+")");
+  return r.json();
+}
+async function load(){
+  try{items=await api();render()}
+  catch(e){$("list").innerHTML='<p class="muted">Penyimpanan online belum terhubung. Kalkulator tetap bisa dipakai.</p>'}
+}
+function render(){
+  if(!items.length){$("list").innerHTML='<p class="muted">Belum ada. Isi biaya di atas, lalu pilih Simpan perhitungan.</p>';return}
+  $("list").innerHTML=items.map(d=>{
+    const t=d.cetak+d.editor+d.layouter+d.cover,h=d.oplah>0?t/d.oplah:0;
+    return `<div class="item"><div><b>${esc(d.judul)}</b><span class="muted">${rp(h)} per buku · ${d.oplah.toLocaleString("id-ID")} eks.</span></div>
+    <div class="a"><button class="ghost" data-open="${d.id}">Buka</button><button class="ghost" data-del="${d.id}">Hapus</button></div></div>`}).join("");
+}
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+$("list").addEventListener("click",async e=>{
+  const o=e.target.dataset.open,d=e.target.dataset.del;
+  if(o){fill(items.find(i=>i.id===o));window.scrollTo({top:0,behavior:"smooth"})}
+  if(d&&confirm("Hapus perhitungan ini?")){
+    try{await api({method:"DELETE"},"?id="+d);if(currentId===d)currentId=null;await load()}catch(x){setStatus(x.message,1)}
+  }
+});
+$("save").addEventListener("click",async()=>{
+  const body={id:currentId,judul:$("judul").value.trim(),margin:Number($("margin").value.replace(",","."))||0};
+  F.forEach(k=>body[k]=val(k));
+  if(!body.judul){setStatus("Isi judul buku dulu.",1);$("judul").focus();return}
+  try{const s=await api({method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+    currentId=s.id;setStatus("Tersimpan.");await load()}catch(x){setStatus(x.message,1)}
+});
+$("reset").addEventListener("click",()=>{fill(null);setStatus("")});
+calc();load();
+</script>
+</body>
+</html>
